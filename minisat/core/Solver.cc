@@ -1689,12 +1689,27 @@ CRef Solver::propagate()
 
             // Look for new watch:
             int watchPos = 0, avoidLevel = assumptions.size();
-            for (int k = 2; k < c.size(); k++) {
-                if (value(c[k]) != l_False) {
-                    watchPos = k; /* memorize that we found one literal we can watch */
-                    if (level(var(c[k])) > avoidLevel) break;
+            // This follows Ian Gent's (JAIR'13) idea of saving the position of the last watch
+            lbool watch_val = l_False;
+            const int middle = c.watch_pos();
+            int watch_cand_pos = middle;
+            for (watch_cand_pos = middle; watch_cand_pos < c.size(); watch_cand_pos++) {
+                if ((watch_val = value(c[watch_cand_pos])) != l_False) {
+                    watchPos = watch_cand_pos; /* memorize that we found one literal we can watch */
+                    if (level(var(c[watch_cand_pos])) > avoidLevel) break;
                 }
             }
+
+            // if still false, we need to continue searching
+            if (watch_val == l_False) {
+                for (watch_cand_pos = 2; watch_cand_pos < middle; watch_cand_pos++) {
+                    if ((watch_val = value(c[watch_cand_pos])) != l_False) {
+                        watchPos = watch_cand_pos; /* memorize that we found one literal we can watch */
+                        if (level(var(c[watch_cand_pos])) > avoidLevel) break;
+                    }
+                }
+            }
+            c.watch_pos(watch_cand_pos);
 
             /* found a position to watch, watch the clause */
             if (watchPos != 0) {

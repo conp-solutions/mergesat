@@ -186,6 +186,7 @@ class Clause
         unsigned simplified : 1;
         unsigned onQueue : 1;
         unsigned size : 30;
+        unsigned watch_position : 32; // position last looked at when searching a non-falsified lit
     } header;
     union {
         Lit lit;
@@ -208,6 +209,7 @@ class Clause
         header.lbd = 0;
         header.S = 0;
         header.removable = 1;
+        header.watch_position = 2; // first two literals are already watched
         // simplify
         //
         header.simplified = 0;
@@ -236,12 +238,26 @@ class Clause
     int S() { return header.S; }
     void S(int s) { header.S = s; }
 
+    int watch_pos() const
+    {
+        assert(header.watch_position < size());
+        return header.watch_position;
+    }
+    void watch_pos(int i)
+    {
+        assert(i >= 2);
+        assert(i < size());
+        header.watch_position = i;
+    }
+
     int size() const { return header.size; }
     void shrink(int i)
     {
         assert(i <= size());
         if (header.has_extra) data[header.size - i] = data[header.size];
         header.size -= i;
+        // make sure, watch position does not reach beyond clause
+        header.watch_position = header.watch_position < header.size ? header.watch_position : 2;
     }
     void pop() { shrink(1); }
     bool learnt() const { return header.learnt; }
