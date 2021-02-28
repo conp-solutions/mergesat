@@ -1689,7 +1689,14 @@ CRef Solver::propagate()
             // Look for new watch:
             int watchPos = 0, avoidLevel = assumptions.size();
             for (int k = 2; k < c.size(); k++) {
-                if (value(c[k]) != l_False) {
+                lbool v;
+                if ((v = value(c[k])) != l_False) {
+                    if (v == l_True) {
+                        *j = w;
+                        j->blocker = c[k];
+                        ++j;
+                        goto NextClause;
+                    }
                     watchPos = k; /* memorize that we found one literal we can watch */
                     if (level(var(c[k])) > avoidLevel) break;
                 }
