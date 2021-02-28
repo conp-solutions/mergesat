@@ -1602,7 +1602,6 @@ CRef Solver::propagate()
 {
     CRef confl = CRef_Undef;
     int num_props = 0;
-    lazySATwatch.clear();
     Lit old_trail_top = lit_Undef;
     CRef old_reason = CRef_Undef;
     watches.cleanAll();
@@ -1700,11 +1699,7 @@ CRef Solver::propagate()
             if (watchPos != 0) {
                 c[1] = c[watchPos];
                 c[watchPos] = false_lit;
-                if (value(c[1]) == l_True) {
-                    lazySATwatch.push(watchItem(w, ~c[1]));
-                } else {
-                    watches[~c[1]].push(w);
-                }
+                watches[~c[1]].push(w);
 
                 goto NextClause;
             }
@@ -1737,11 +1732,7 @@ CRef Solver::propagate()
                     if (nMaxInd != 1) {
                         std::swap(c[1], c[nMaxInd]);
                         j--; // undo last watch
-                        if (value(c[1]) == l_True) {
-                            lazySATwatch.push(watchItem(w, ~c[1]));
-                        } else {
-                            watches[~c[1]].push(w);
-                        }
+                        watches[~c[1]].push(w);
                     }
 
                     uncheckedEnqueue(first, nMaxLevel, cr);
@@ -1757,11 +1748,6 @@ CRef Solver::propagate()
     }
 
 propagation_out:;
-    /* we still need to re-add the satisfied clauses to their respective watch lists - in order! */
-    for (int k = 0; k < lazySATwatch.size(); ++k) {
-        watches[lazySATwatch[k].l].push(lazySATwatch[k].w);
-    }
-
     propagations += num_props;
     simpDB_props -= num_props;
 
