@@ -1700,6 +1700,9 @@ CRef Solver::propagate()
                 }
             }
 
+            assert((watch_val != l_False || middle != watch_cand_pos) &&
+                   "Either we progressed, or found a watch candidate");
+
             // if still false, we need to continue searching
             if (watch_val == l_False) {
                 for (watch_cand_pos = 2; watch_cand_pos < middle; watch_cand_pos++) {
@@ -1709,12 +1712,13 @@ CRef Solver::propagate()
                     }
                 }
             }
-            c.watch_pos(watch_cand_pos);
 
             /* found a position to watch, watch the clause */
             if (watchPos != 0) {
                 c[1] = c[watchPos];
                 c[watchPos] = false_lit;
+                /* updating watch is only useful in case we watch the clause */
+                c.watch_pos(watchPos);
                 if (value(c[1]) == l_True) {
                     lazySATwatch.push(watchItem(w, ~c[1]));
                 } else {
